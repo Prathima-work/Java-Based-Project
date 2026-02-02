@@ -1,50 +1,50 @@
-pipeline {
+pipeline{
     agent any
 
-    tools {
+    tools{
         jdk 'java-17'
         maven 'maven'
     }
 
-    stages {
-
-        stage('GIT CHECKOUT') {
-            steps {
+    stages{
+        stage('git checkout'){
+            steps{
                 git branch: 'main', url: 'https://github.com/Prathima-R/springboot-app.git'
             }
         }
 
-        stage('COMPILE') {
-            steps {
+        stage('compile'){
+            steps{
                 sh 'mvn compile'
             }
         }
 
-        stage('BUILD') {
-            steps {
+        stage('build'){
+            steps{
                 sh 'mvn clean package'
             }
         }
 
-        stage('SONARQUBE SCAN') {
-            steps {
+        stage('code quality check'){
+            steps{
                 sh '''
                 mvn sonar:sonar \
-                -Dsonar.projectKey=java \
-                -Dsonar.host.url=http://65.2.126.97:9000 \
-                -Dsonar.login=afb35d39d9cf734f2cbfe5842188de8d38813ba1
+  -Dsonar.projectKey=java \
+  -Dsonar.host.url=http://65.2.111.162:9000 \
+  -Dsonar.login=6000662bd134bd3a1f59f6216b9d3eac2a7deba4
+          
                 '''
             }
         }
 
-        stage('IMAGE BUILD') {
-            steps {
+        stage('Docker image Build'){
+            steps{
                 sh 'docker build -t prathima2025/springboot-app:${GIT_COMMIT} .'
             }
         }
 
-        stage('PUSH IMAGE') {
-            steps {
+        stage('Docker push'){
+            steps{
                 withCredentials([usernamePassword(
                     credentialsId: 'docker-hub-credentials',
                     usernameVariable: 'DOCKER_USERNAME',
@@ -56,8 +56,8 @@ pipeline {
             }
         }
 
-        stage('DEPLOYMENT') {
-            steps {
+        stage('k8s Deployment'){
+            steps{
                 withKubeConfig(credentialsId: 'kubecredID') {
                     sh '''
                     kubectl apply -f Deployment.yml
@@ -67,9 +67,8 @@ pipeline {
             }
         }
     }
-}
 
-post {
+    post {
         success {
             emailext (
                 subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
