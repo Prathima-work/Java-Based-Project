@@ -3,12 +3,8 @@ pipeline {
     tools {
         maven 'maven 3.8.6'
     }
-    parameters {
-        string(
-            name: 'PROJECT_GUID',
-            defaultValue: '5feedf8a-ed11-4eb7-ba5c-91bddbcaed87',
-            description: 'Project GUID for signing'
-            )
+    environment {
+        PROJECT_GUID = '5feedf8a-ed11-4eb7-ba5c-91bddbcaed87'
        }
     stages {
 
