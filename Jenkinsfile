@@ -1,18 +1,15 @@
 pipeline {
     agent any
-
     tools {
-        jdk 'java-17'
-        maven 'maven'
+        maven 'maven 3.8.6'
     }
-
     parameters {
         string(
             name: 'PROJECT_GUID',
             defaultValue: '5feedf8a-ed11-4eb7-ba5c-91bddbcaed87',
             description: 'Project GUID for signing'
-            }
             )
+       }
     stages {
 
         stage('Checkout Code') {
@@ -78,7 +75,7 @@ pipeline {
                     exit 1
                 fi
 
-                echo "🔍 STARTING VERIFICATION"
+                echo " STARTING VERIFICATION"
 
                 codesign -guid ${PROJECT_GUID} \
                          -out $SIGNED_FILE \
