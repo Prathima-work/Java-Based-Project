@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         jdk 'java-17'
-        maven 'maven'
+        maven 'mvn 3.9.9'
     }
 
     parameters {
