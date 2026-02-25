@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    tools {
+        maven 'maven 3.8.6'
+    }
     parameters {
         string(
             name: 'PROJECT_GUID',
