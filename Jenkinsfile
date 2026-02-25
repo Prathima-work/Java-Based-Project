@@ -1,73 +1,94 @@
-stage('Sign JAR') {
-    steps {
-        sh '''
-        set -euo pipefail
-
-        SIGN_DIR="${WORKSPACE}/signed"
-        mkdir -p "$SIGN_DIR"
-
-        echo "=================================================="
-        echo "🚀 SIGNING PROCESS STARTED"
-        echo "Input File  : ${JAR_FILE}"
-        echo "Project GUID: ${PROJECT_GUID}"
-        echo "=================================================="
-
-        codesign -guid ${PROJECT_GUID} \
-                 -in "${JAR_FILE}" \
-                 -out "$SIGN_DIR" \
-                 -sign
-
-        EXIT_CODE=$?
-
-        echo "--------------------------------------------------"
-        echo "Codesign Exit Code: $EXIT_CODE"
-        echo "--------------------------------------------------"
-
-        if [ $EXIT_CODE -ne 0 ]; then
-            echo "❌ SIGNING FAILED"
-            exit 1
-        fi
-
-        echo "✅ SIGN PROCESS COMPLETED SUCCESSFULLY"
-        echo "=================================================="
-        '''
+pipeline {
+    agent any
+    tools {
+        maven 'maven 3.8.6'
     }
-}
+    environment {
+        PROJECT_GUID = '5feedf8a-ed11-4eb7-ba5c-91bddbcaed87'
+       }
+    stages {
 
-stage('Verify Signed JAR') {
-    steps {
-        sh '''
-        set -euo pipefail
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/Prathima-work/Java-Based-Project.git'
+            }
+        }
 
-        SIGNED_FILE="${WORKSPACE}/signed/$(basename ${JAR_FILE})"
+        stage('Compile') {
+            steps {
+                sh 'mvn compile'
+            }
+        }
 
-        echo "=================================================="
-        echo "🔎 VERIFICATION PROCESS STARTED"
-        echo "Signed File: $SIGNED_FILE"
-        echo "=================================================="
+        stage('Build Package') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
 
-        if [ ! -f "$SIGNED_FILE" ]; then
-            echo "❌ Signed file not found"
-            exit 1
-        fi
+        stage('Locate JAR') {
+            steps {
+                script {
+                    env.JAR_FILE = sh(
+                        script: "ls target/*.jar | head -n 1",
+                        returnStdout: true
+                    ).trim()
 
-        codesign -guid ${PROJECT_GUID} \
-                 -out "$SIGNED_FILE" \
-                 -verify
+                    if (!env.JAR_FILE) {
+                        error "❌ No JAR file found in target directory"
+                    }
 
-        EXIT_CODE=$?
+                    echo "Jar found: ${env.JAR_FILE}"
+                }
+            }
+        }
 
-        echo "--------------------------------------------------"
-        echo "Verification Exit Code: $EXIT_CODE"
-        echo "--------------------------------------------------"
+        stage('Sign JAR') {
+            steps {
+                sh '''
+                mkdir -p ${WORKSPACE}/signed
 
-        if [ $EXIT_CODE -ne 0 ]; then
-            echo "❌ VERIFICATION FAILED"
-            exit 1
-        fi
+                echo " STARTING SIGN PROCESS"
 
-        echo "✅ VERIFICATION COMPLETED SUCCESSFULLY"
-        echo "=================================================="
-        '''
+                codesign -guid ${PROJECT_GUID} \
+                         -in ${JAR_FILE} \
+                         -out ${WORKSPACE}/signed \
+                         -sign
+
+                echo "✅ SIGN PROCESS COMPLETED"
+                '''
+            }
+        }
+
+        stage('Verify Signed JAR') {
+            steps {
+                sh '''
+                SIGNED_FILE=${WORKSPACE}/signed/$(basename ${JAR_FILE})
+
+                if [ ! -f "$SIGNED_FILE" ]; then
+                    echo " Signed file not found"
+                    exit 1
+                fi
+
+                echo " STARTING VERIFICATION"
+
+                codesign -guid ${PROJECT_GUID} \
+                         -out $SIGNED_FILE \
+                         -verify
+
+                echo "✅ VERIFICATION COMPLETED"
+                '''
+            }
+        }
+    }
+ 
+    post {
+        success {
+            echo " BUILD, SIGNING & VERIFICATION SUCCESSFUL"
+        }
+        failure {
+            echo " PIPELINE FAILED"
+        }
     }
 }
