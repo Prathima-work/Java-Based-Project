@@ -75,7 +75,7 @@ pipeline {
                     exit 1
                 fi
 
-                echo "🔍 STARTING VERIFICATION"
+                echo " STARTING VERIFICATION"
 
                 codesign -guid ${PROJECT_GUID} \
                          -out $SIGNED_FILE \
