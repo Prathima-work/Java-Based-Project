@@ -1,116 +1,98 @@
-pipeline{
+pipeline {
     agent any
 
-    tools{
+    tools {
         jdk 'java-17'
         maven 'maven'
     }
 
-    stages{
-        stage('git checkout'){
-            steps{
-                git branch: 'main', url: 'https://github.com/Prathima-R/springboot-app.git'
+    parameters {
+        string(name: 'PROJECT_GUID', description: 'Enter Project GUID for signing')
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/Prathima-work/Java-Based-Project.git'
             }
         }
 
-        stage('compile'){
-            steps{
+        stage('Compile') {
+            steps {
                 sh 'mvn compile'
             }
         }
 
-        stage('build'){
-            steps{
+        stage('Build Package') {
+            steps {
                 sh 'mvn clean package'
             }
         }
 
-        stage('code quality check'){
-            steps{
+        stage('Locate JAR') {
+            steps {
+                script {
+                    env.JAR_FILE = sh(
+                        script: "ls target/*.jar | head -n 1",
+                        returnStdout: true
+                    ).trim()
+
+                    if (!env.JAR_FILE) {
+                        error "❌ No JAR file found in target directory"
+                    }
+
+                    echo "Jar found: ${env.JAR_FILE}"
+                }
+            }
+        }
+
+        stage('Sign JAR') {
+            steps {
                 sh '''
-                mvn sonar:sonar \
-  -Dsonar.projectKey=java \
-  -Dsonar.host.url=http://65.2.111.162:9000 \
-  -Dsonar.login=6000662bd134bd3a1f59f6216b9d3eac2a7deba4
-          
+                mkdir -p ${WORKSPACE}/signed
+
+                echo " STARTING SIGN PROCESS"
+
+                codesign -guid ${PROJECT_GUID} \
+                         -in ${JAR_FILE} \
+                         -out ${WORKSPACE}/signed \
+                         -sign
+
+                echo "✅ SIGN PROCESS COMPLETED"
                 '''
             }
         }
 
-        stage('Docker image Build'){
-            steps{
-                sh 'docker build -t prathima2025/springboot-app:${GIT_COMMIT} .'
-            }
-        }
+        stage('Verify Signed JAR') {
+            steps {
+                sh '''
+                SIGNED_FILE=${WORKSPACE}/signed/$(basename ${JAR_FILE})
 
-        stage('Docker push'){
-            steps{
-                withCredentials([usernamePassword(
-                    credentialsId: 'docker-hub-credentials',
-                    usernameVariable: 'DOCKER_USERNAME',
-                    passwordVariable: 'DOCKER_PASSWORD'
-                )]) {
-                    sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                    sh 'docker push prathima2025/springboot-app:${GIT_COMMIT}'
-                }
-            }
-        }
+                if [ ! -f "$SIGNED_FILE" ]; then
+                    echo " Signed file not found"
+                    exit 1
+                fi
 
-        stage('k8s Deployment'){
-            steps{
-                withKubeConfig(credentialsId: 'kubecredID') {
-                    sh '''
-                    kubectl apply -f Deployment.yml
-                    kubectl apply -f service.yml
-                    '''
-                }
+                echo "🔍 STARTING VERIFICATION"
+
+                codesign -guid ${PROJECT_GUID} \
+                         -out $SIGNED_FILE \
+                         -verify
+
+                echo "✅ VERIFICATION COMPLETED"
+                '''
             }
         }
     }
 
     post {
         success {
-            emailext (
-                subject: "✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
-                body: """
-Hi Team,
-
-Good news 🎉
-
-Pipeline completed successfully.
-
-Job Name   : ${JOB_NAME}
-Build No   : ${BUILD_NUMBER}
-Status     : SUCCESS
-Build URL  : ${BUILD_URL}
-
-Regards,
-Jenkins
-""",
-                to: "prathimaprati504@gmail.com"
-            )
+            echo " BUILD, SIGNING & VERIFICATION SUCCESSFUL"
         }
-
         failure {
-            emailext (
-                subject: "❌ FAILURE: ${JOB_NAME} #${BUILD_NUMBER}",
-                body: """
-Hi Team,
-
-Pipeline has FAILED ❌
-
-Job Name   : ${JOB_NAME}
-Build No   : ${BUILD_NUMBER}
-Status     : FAILURE
-Build URL  : ${BUILD_URL}
-
-Please check logs for details.
-
-Regards,
-Jenkins
-""",
-                to: "prathimaprati504@gmail.com"
-            )
+            echo " PIPELINE FAILED"
         }
     }
 }
