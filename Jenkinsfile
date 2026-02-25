@@ -7,9 +7,11 @@ pipeline {
     }
 
     parameters {
-        string(name: 'PROJECT_GUID', description: 'Enter Project GUID for signing')
-    }
-
+        string(
+            name: 'PROJECT_GUID',
+            defaultValue: '5feedf8a-ed11-4eb7-ba5c-91bddbcaed87',
+            description: 'Project GUID for signing'
+            }
     stages {
 
         stage('Checkout Code') {
