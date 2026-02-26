@@ -12,6 +12,8 @@ public class TwitterAppApplication {
 		System.out.println("This is a simple Twitter application built with Spring Boot.");
 		System.out.println("Feel free to explore and customize it to your needs!");
 System.out.println("Happy tweeting!");
+System.out.println("Thank you for using the Twitter App. We hope you enjoy it!");
+
 	}
 
 }
