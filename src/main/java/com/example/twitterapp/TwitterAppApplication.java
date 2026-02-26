@@ -8,8 +8,9 @@ public class TwitterAppApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(TwitterAppApplication.class, args);
-	
 		System.out.println("Hello, Twitter App!");
+		System.out.println("This is a simple Twitter application built with Spring Boot.");
+
 
 
 	}
