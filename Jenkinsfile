@@ -1,7 +1,7 @@
 pipeline {
     agent any
     tools {
-        maven 'maven 3.9.9'
+        maven 'mvn 3.9.9'
     }
     environment {
         PROJECT_GUID = '5feedf8a-ed11-4eb7-ba5c-91bddbcaed87'
