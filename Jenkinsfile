@@ -47,6 +47,7 @@ pipeline {
         stage('Sign JAR') {
             steps {
                 sh '''
+                set -p 
                 mkdir -p ${WORKSPACE}/signed
 
                 echo " STARTING SIGN PROCESS"
