@@ -17,5 +17,3 @@ System.out.println("Hello, Good Morning! Welcome to the Twitter App. We hope you
 
 	}
 	}
-
-}
