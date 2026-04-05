@@ -16,6 +16,7 @@ System.out.println("Thank you for using the Twitter App. We hope you enjoy it!")
 System.out.println("Hello, Good Morning! Welcome to the Twitter App. We hope you have a great day tweeting!");
 System.out.println("Hello, Good Afternoon! Welcome to the Twitter App. We hope you have a great day tweeting!");
 System.out.println("Hello, Good Evening! Welcome to the Twitter App. We hope you have a great day tweeting!");
+System.out.println("Hello, Good Night! Welcome to the Twitter App. We hope you have a great day tweeting!");
 
 	}
 	}
